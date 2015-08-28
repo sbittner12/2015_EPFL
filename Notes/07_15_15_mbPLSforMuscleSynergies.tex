@@ -1,0 +1,180 @@
+% You should title the file with a .tex extension (hw1.tex, for example)
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{tikz-qtree}
+\usepackage{tikz-qtree-compat}
+\usepackage[normalem]{ulem}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\oddsidemargin0cm
+\topmargin-2cm     %I recommend adding these three lines to increase the 
+\textwidth16.5cm   %amount of usable space on the page (and save trees)
+\textheight23.5cm  
+
+\newcommand{\question}[2] {\vspace{.25in} \hrule\vspace{0.5em}
+\noindent{\bf #1: #2} \vspace{0.5em}
+\hrule \vspace{.10in}}
+\renewcommand{\part}[1] {\vspace{.10in} {\bf (#1)}}
+
+\newcommand{\myname}{Sean Bittner}
+\newcommand{\myandrew}{sean.bittner@epfl.ch}
+\newcommand{\myhwnum}{12}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+ 
+\pagestyle{fancyplain}
+\rhead{\fancyplain{}{\myname\\ \myandrew}}
+\chead{\fancyplain{}{TNE, Center for Neuroprosthetics, EPFL}}
+
+\begin{document}
+
+\medskip                        % Skip a "medium" amount of space
+                                % (latex determines what medium is)
+                                % Also try: \bigskip, \littleskip
+
+\thispagestyle{plain}
+\begin{center}                  % Center the following lines
+{\Large Multi-block partial least squares for muscle synergies} \\
+\myname \\
+\myandrew \\
+July 15, 2015 \\
+\end{center}
+
+\question{1}{Introduction}
+It has been shown in [1] that a multi-block partial least squares approach can be useful for extracting corticomuscular couplings at a group level.  This works by splitting the data into blocks by subject.  The algorithm allows patterns to be learned at a subject level, and combined at the super level.  Regression happens at both the sub-level and super-level. \\
+
+In the case of our study, we are interested in looking at the patterns associated with particular muscle synergies. Muscle synergies are the result of dimensionality reduction performed on EMG signals.  Applying independent component analysis to EMG data allows the extraction of components describing muscle groups that are activated together.  The co-activation of these muscle groups is most likely the result of modularization of limb control in the spinal cord. \\
+
+These muscle synergies can be ranked in order of variance explained. It has been shown that the ordered muscle synergies across healthy patients share much similarity.  Multi-block PLS allows us to model subject EMG activation at an individual level.  Since we are interested in the EEG features related to particular muscle synergy activation, I propose a method for learning group level EEG features which couple with particular muscle synergy activation.
+
+
+\question{2}{Three-way multi-block partial least squares}
+Three-way mbPLS extends mbPLS from 2D arrays to multiway arrays. Now, we can store 3D data in the input block [1].  For example, we can use eeg spectrograms where the three dimensions are time points X frequency bins X electrodes.  Or, we can show frequency connectivity with a measure such as partial directed coherence where the dimensions would be time points X frequency bins X electrode connectivity.  Below is the specification of three-way mbPLS.
+
+Sub-level decomposition:
+\[X_b = \sum_{k=1}^K r_{b,k} \otimes a_{b,k} \otimes p_{b,k} + E_b\]
+\[Y_b = \sum_{k=1}^K s_{b,k} \otimes q_{b,k} + F_b\]
+
+Super-level decomposition:
+\[R_k = [r_{1,k}, r_{2,k}, ..., r_{b,k},] \]
+\[R_k = t_k w_{sup}^T \]\textsl{•}
+\[S_k = [s_{1,k}, s_{2,k}, ..., s_{b,k},] \]
+\[S_k = u_k q_{sup}^T \]
+
+Inner Relation:
+\[u_k = \beta_k t_k \]
+
+A requirement for partial least squares is that $X_b$ and $Y_b$ must be mean-centered with unit variance. $r_{b,k}$ and $s_{b,k}$ are the temporal signatures of the kth component of subject b for the predictor and response blocks respectively. $a_{b,k}$ and $p_{b,k}$ represent spectral patterns and spatial patterns respectively.  In the case of EEG spectrogram $p_{b,k}$ represents electrode positions, and for EEG PDC, $p_{b,k}$ represents connections between electrodes. $q_{b,k}$ represents the kth EMG activation pattern for subject b.  
+
+Algorithm 1 shows the three-way mbPLS algorithm:
+\begin{algorithm}
+\caption{Three-way mbPLS algorithm from [1]}
+\label{threewaymbPLS}
+\begin{algorithmic}[1]
+\\Choose start $u$
+\\\textbf{repeat}
+\\Compute the auxiliary matrix $\textbf{Z}_b$ whose $(f,c)^{th}$ element is given by $Z_{b,fc} \leftarrow \sum_{t=1}^{N_t} X_{b,tfc}u_t$ for $f \in [1,N_f], c \in [1,N_c], b \in [1,B]$
+\\Concatenate the auxiliary matrices $\textbf{Z} \leftarrow [\textbf{Z}_1, \textbf{Z}_2, ..., \textbf{Z}_b]$
+\\Perform singular decomposition on \textbf{Z}:
+\\$[\textbf{g},\sigma,\textbf{h}] \leftarrow SVD(\textbf{Z},1)$, where $\textbf{g}$ and $\textbf{h}$ are the first sing. vec. of $Z$
+\For{b = $1$ to $B$ }
+\State$\textbf{a}_b \leftarrow g$
+\State$\textbf{p}_b \leftarrow [h_{(b-1)N_c+1}, h_{(b-1)N_c+2}, ..., h_{(b-1)N_c+N_c}]$
+\State$\textbf{r}_b \leftarrow [\textbf{r}_{b,1}, \textbf{r}_{b,2}, ..., \textbf{r}_{b,N_t}]$ where $r_{b,t} \leftarrow \sum_{f=1}^{N_c} X_{b,tfc}a_{b,f}p_{b,c}$ for $t \in [1,N_t]$
+\EndFor
+\\$\textbf{R} \leftarrow [\textbf{r}_1, \textbf{r}_2, ..., \textbf{r}_B]$
+\\$w_{sup} \leftarrow \textbf{R}^T \textbf{u} / ||\textbf{u}^T \textbf{u}||$, normalize $\textbf{w}_{sup}$
+\\$t \leftarrow \textbf{R} \textbf{w}_{sup} / \textbf{w}_{sup}^T \textbf{w}_{sup}$
+\For{b = $1$ to $B$ }
+\State$\textbf{q}_b \leftarrow \textbf{Y}_b^ \textbf{t} / ||\textbf{t}^T \textbf{t}||$, normalize $\textbf{q}_b$
+\State$\textbf{s}_b \leftarrow \textbf{Y}_b \textbf{q}_b / \textbf{q}_b^T \textbf{q}_b$
+\EndFor
+\\$\textbf{S} \leftarrow [\textbf{s}_1, \textbf{s}_2, ..., \textbf{s}_B]$
+\\$\textbf{q}_{sup} \leftarrow \textbf{S}^T \textbf{t} / ||\textbf{t}^T \textbf{t}||$, normalize $\textbf{q}_{sup}$
+\\$\textbf{u} \leftarrow \textbf{S}^T \textbf{q}_{sup} / \textbf{q}_{sup}^T \textbf{q}_{sup}$
+\\\textbf{until} t converges
+\\Deflation by subracting the effect of the first k components from each data block, $\textbf{X}_b$ and $\textbf{Y}_b$ for $b \in [1,B]$
+\For{b = $1$ to $B$ }
+\State$\textbf{G}_b \leftarrow (\textbf{T}_{1:k}^T \textbf{T}_{1:k})^{-1}\textbf{T}_{1:k}^\textbf{T} u_b$, where $T_{1:k} = [t_1, t_2, ... t_k]$
+\State$\textbf{X}_{b,ftc} \leftarrow \textbf{X}_{b,ftc} - \textbf{r}_{b,t}\textbf{a}_{b,f}\textbf{p}_{b,c}$ for $t \in [1,N_t], f \in [1,N_f], c \in [1,N_c]$
+\State$\textbf{Y}_b \leftarrow \textbf{Y}_b - \textbf{T}_{1:k}\textbf{G}_b \textbf{q}_b^T$
+\EndFor
+\\$k \leftarrow k + 1$ The next pair of PLS components is found by repeating from Step 1 on deflated data blocks.
+\end{algorithmic}
+\end{algorithm}
+
+We can see that block specific patterns  $a_{b,k}$ and $p_{b,k}$ of the predictor are regressed on the response super-block temporal signature $u$ (8,9), and the block specific patterns of the response are regressed on the predictor super-block temporal signature $t$ (16). We also see that the super-block weight vectors $w_{sup}$ and $q_{sup}$ are regressed on the opposite temporal signatures as well.  The regression of $q_{sup}$ at the super-level is what will enable us to incorporate muscle synergies in the next section.
+
+\clearpage
+\question{3}{Changing three-way mbPLS to learn EEG features with muscle synergies}
+In order to learn the group level features of EEG that correspond to muscle synergies across subjects, we need to incorporate muscle synergies into the model.  Prior to running three-way mbPLS we can learn muscle synergies for each subject through ICA factorization of the EMG data via
+\[Y_b = A_bM_b\]
+where $Y_b$ is the (time points X EMG channels) matrix with columns that are mean-centered and have unit variance.  $A$ is the (time points X ica components) matrix whose columns reveals the temporal signature of each ica component.  $M$ is the (ica components X EMG channels) matrix whose rows reveal the learned muscle synergies. \\
+
+In the three-way mbPLS algorithm with muscle synergies, we will fix the sub-level block decompositions to the ICA decomposition:
+\[s_{b,k} = A_b(:,k) \] 
+\[q_{b,k} = M_b(k,:) \] 
+
+Algorithm 2 shows three-way mbPLS with muscle synergies. \\
+
+We are able to fix the sub-level response block components because regression between the predictor and response blocks still happens at the super-level.  After convergence, we will be able to compare some three-dimensional EEG features with particular muscle synergy activation across groups.
+
+
+\begin{algorithm}
+\caption{Adaptation of three-way mbPLS for muscle synergies}
+\label{threewaymbPLS}
+\begin{algorithmic}[1]
+\For{b = $1$ to $B$ }
+\State Perform independent component analysis on $Y_b$
+\State $[\textbf{A}_b,\textbf{M}_b] \leftarrow ICA(\textbf{Y}_b)$, where $\textbf{A}$ is the mixing matrix, and $\textbf{M}$ is the signal matrix. 
+\For{k = $1$ to $K$ }
+\State $\textbf{s}_{b,k} \leftarrow \textbf{A}_b(:,k)$
+\State $\textbf{q}_{b,k} \leftarrow \textbf{M}_b(k,:)^T$
+\EndFor
+\EndFor
+\For{k = $1$ to $K$ }
+\State$\textbf{S}_k \leftarrow [\textbf{s}_{1,k}, \textbf{s}_{2,k}, ..., \textbf{s}_{B,k}]$
+\EndFor
+\\Choose start $\textbf{u}$
+\\\textbf{repeat}  (the k's are left out to simplify notation, in each iteration, $\textbf{S}$ refers to $\textbf{S}_k$)
+\\Compute the auxiliary matrix $\textbf{Z}_b$ whose $(f,c)^{th}$ element is given by $Z_{b,fc} \leftarrow \sum_{t=1}^{N_t} X_{b,tfc}u_t$ for $f \in [1,N_f], c \in [1,N_c], b \in [1,B]$
+\\Concatenate the auxiliary matrices $\textbf{Z} \leftarrow [\textbf{Z}_1, \textbf{Z}_2, ..., \textbf{Z}_b]$
+\\Perform singular decomposition on \textbf{Z}:
+\\$[\textbf{g},\sigma,\textbf{h}] \leftarrow SVD(\textbf{Z},1)$, where $\textbf{g}$ and $\textbf{h}$ are the first sing. vec. of $Z$
+\For{b = $1$ to $B$ }
+\State$\textbf{a}_b \leftarrow g$
+\State$\textbf{p}_b \leftarrow [h_{(b-1)N_c+1}, h_{(b-1)N_c+2}, ..., h_{(b-1)N_c+N_c}]$
+\State$\textbf{r}_b \leftarrow [\textbf{r}_{b,1}, \textbf{r}_{b,2}, ..., \textbf{r}_{b,N_t}]$ where $r_{b,t} \leftarrow \sum_{f=1}^{N_c} X_{b,tfc}a_{b,f}p_{b,c}$ for $t \in [1,N_t]$
+\EndFor
+\\$\textbf{R} \leftarrow [\textbf{r}_1, \textbf{r}_2, ..., \textbf{r}_B]$
+\\$w_{sup} \leftarrow \textbf{R}^T \textbf{u} / ||\textbf{u}^T \textbf{u}||$, normalize $\textbf{w}_{sup}$
+\\$t \leftarrow \textbf{R} \textbf{w}_{sup} / \textbf{w}_{sup}^T \textbf{w}_{sup}$
+\\ \textbf{For this algorithm, we will not regress response sub-level block components on temporal activation of the predictor super-block. $q_b$ and $s_b$ will remain unchanged for $b \in [1,B]$.}
+\\$\textbf{q}_{sup} \leftarrow \textbf{S}^T \textbf{t} / ||\textbf{t}^T \textbf{t}||$, normalize $\textbf{q}_{sup}$
+\\$\textbf{u} \leftarrow \textbf{S}^T \textbf{q}_{sup} / \textbf{q}_{sup}^T \textbf{q}_{sup}$
+\\\textbf{until} t converges
+\\Deflation by subracting the effect of the first k components from each data block, $\textbf{X}_b$ and $\textbf{Y}_b$ for $b \in [1,B]$
+\For{b = $1$ to $B$ }
+\State$\textbf{G}_b \leftarrow (\textbf{T}_{1:k}^T \textbf{T}_{1:k})^{-1}\textbf{T}_{1:k}^\textbf{T} u_b$, where $T_{1:k} = [t_1, t_2, ... t_k]$
+\State$\textbf{X}_{b,ftc} \leftarrow \textbf{X}_{b,ftc} - \textbf{r}_{b,t}\textbf{a}_{b,f}\textbf{p}_{b,c}$ for $t \in [1,N_t], f \in [1,N_f], c \in [1,N_c]$
+\State$\textbf{Y}_b \leftarrow \textbf{Y}_b - \textbf{T}_{1:k}\textbf{G}_b \textbf{q}_b^T$
+\EndFor
+\\$k \leftarrow k + 1$ The next pair of PLS components is found by repeating from Step 1 on deflated data blocks.
+\end{algorithmic}
+\end{algorithm}
+\question{A}{References}
+1. \textsl{A multiblock PLS model of cortico-cortical and corticomuscular interactions in Parkinson's disease. Chiang et. al.}
+
+
+
+\end{document}
+
