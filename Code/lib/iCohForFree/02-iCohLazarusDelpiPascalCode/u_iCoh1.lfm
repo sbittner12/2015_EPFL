@@ -1,0 +1,144 @@
+object Form1: TForm1
+  Left = 479
+  Height = 307
+  Top = 405
+  Width = 676
+  Caption = 'isolated effective coherence'
+  ClientHeight = 307
+  ClientWidth = 676
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '1.2.2.0'
+  object FileTxt: TLabel
+    Left = 91
+    Height = 13
+    Top = 20
+    Width = 19
+    Caption = 'file?'
+    ParentColor = False
+    OnClick = FileButtClick
+  end
+  object Label1: TLabel
+    Left = 310
+    Height = 13
+    Top = 97
+    Width = 89
+    Caption = '(=0 for automatic)'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 460
+    Height = 13
+    Top = 97
+    Width = 151
+    Caption = '(for output results, power of 2)'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 460
+    Height = 13
+    Top = 116
+    Width = 106
+    Caption = '(from zero to Nyquist)'
+    ParentColor = False
+  end
+  object FileButt: TButton
+    Left = 10
+    Height = 25
+    Top = 15
+    Width = 75
+    Caption = 'Select file'
+    OnClick = FileButtClick
+    TabOrder = 0
+  end
+  object Ptxt: TLabeledEdit
+    Left = 10
+    Height = 21
+    Top = 70
+    Width = 121
+    EditLabel.AnchorSideLeft.Control = Ptxt
+    EditLabel.AnchorSideRight.Control = Ptxt
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = Ptxt
+    EditLabel.Left = 10
+    EditLabel.Height = 13
+    EditLabel.Top = 54
+    EditLabel.Width = 121
+    EditLabel.Caption = 'Number of time series'
+    EditLabel.ParentColor = False
+    TabOrder = 1
+    Text = '5'
+  end
+  object Qtxt: TLabeledEdit
+    Left = 160
+    Height = 21
+    Top = 70
+    Width = 121
+    EditLabel.AnchorSideLeft.Control = Qtxt
+    EditLabel.AnchorSideRight.Control = Qtxt
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = Qtxt
+    EditLabel.Left = 160
+    EditLabel.Height = 13
+    EditLabel.Top = 54
+    EditLabel.Width = 121
+    EditLabel.Caption = 'AR order'
+    EditLabel.ParentColor = False
+    TabOrder = 2
+    Text = '3'
+  end
+  object NTtxt: TLabeledEdit
+    Left = 310
+    Height = 21
+    Top = 70
+    Width = 121
+    EditLabel.AnchorSideLeft.Control = NTtxt
+    EditLabel.AnchorSideRight.Control = NTtxt
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = NTtxt
+    EditLabel.Left = 310
+    EditLabel.Height = 13
+    EditLabel.Top = 54
+    EditLabel.Width = 121
+    EditLabel.Caption = 'Number of time samples'
+    EditLabel.ParentColor = False
+    TabOrder = 3
+    Text = '0'
+  end
+  object NFreqTxt: TLabeledEdit
+    Left = 460
+    Height = 21
+    Top = 70
+    Width = 121
+    EditLabel.AnchorSideLeft.Control = NFreqTxt
+    EditLabel.AnchorSideRight.Control = NFreqTxt
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = NFreqTxt
+    EditLabel.Left = 460
+    EditLabel.Height = 13
+    EditLabel.Top = 54
+    EditLabel.Width = 121
+    EditLabel.Caption = 'Number of discrete freqs'
+    EditLabel.ParentColor = False
+    TabOrder = 4
+    Text = '128'
+  end
+  object GoButt: TButton
+    Left = 10
+    Height = 25
+    Top = 127
+    Width = 75
+    Caption = 'Go'
+    OnClick = GoButtClick
+    TabOrder = 5
+  end
+  object OpenDialog1: TOpenDialog
+    Filter = 'text|*.txt|all|*.*'
+    left = 529
+    top = 189
+  end
+end
